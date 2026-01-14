@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -15,14 +17,11 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/go-kit/kit/log"
-	kitzap "github.com/go-kit/kit/log/zap"
 	"github.com/hikhvar/mqtt2prometheus/pkg/config"
 	"github.com/hikhvar/mqtt2prometheus/pkg/metrics"
 	"github.com/hikhvar/mqtt2prometheus/pkg/mqttclient"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/prometheus/exporter-toolkit/web"
 )
 
 // These variables are set by goreleaser at linking time.
@@ -58,11 +57,6 @@ var (
 		"log-format",
 		"console",
 		"set the desired log output format. Valid values are 'console' and 'json'",
-	)
-	webConfigFlag = flag.String(
-		"web-config-file",
-		"",
-		"[EXPERIMENTAL] Path to configuration file that can enable TLS or authentication for metric scraping.",
 	)
 	usePasswordFromFile = flag.Bool(
 		"treat-mqtt-password-as-file-name",
@@ -166,20 +160,37 @@ func main() {
 		Handler: http.DefaultServeMux,
 	}
 	go func() {
-		err = web.ListenAndServe(s, *webConfigFlag, setupGoKitLogger(logger))
-		if err != nil {
-			logger.Fatal("Error while serving http", zap.Error(err))
+		signalReceived := false
+		for {
+			select {
+			case <-c:
+				if signalReceived {
+					logger.Info("Repeated signal received: forcing shutdown")
+					err := s.Close()
+					if err != nil {
+						zap.Error(err)
+					}
+					return
+				} else {
+					signalReceived = true
+					logger.Info("Terminated via Signal. Stop.")
+					ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+					defer cancel()
+					err = s.Shutdown(ctx)
+					if err != nil {
+						zap.Error(err)
+					}
+					continue
+				}
+			case err = <-errorChan:
+				logger.Error("Error while processing message", zap.Error(err))
+			}
 		}
 	}()
-
-	for {
-		select {
-		case <-c:
-			logger.Info("Terminated via Signal. Stop.")
-			os.Exit(0)
-		case err = <-errorChan:
-			logger.Error("Error while processing message", zap.Error(err))
-		}
+	err = s.ListenAndServe()
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
+		logger.Error(fmt.Sprintf("server aborted with error: %s", err.Error()))
+		os.Exit(1)
 	}
 }
 
@@ -227,10 +238,6 @@ func mustSetupLogger() *zap.Logger {
 
 	config.SetProcessContext(logger)
 	return logger
-}
-
-func setupGoKitLogger(l *zap.Logger) log.Logger {
-	return kitzap.NewZapSugarLogger(l, zap.NewAtomicLevelAt(*logLevelFlag).Level())
 }
 
 func setupExtractor(cfg config.Config) (metrics.Extractor, error) {
