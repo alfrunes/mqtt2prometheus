@@ -34,8 +34,8 @@ var (
 var (
 	configFlag = flag.String(
 		"config",
-		"config.yaml",
-		"config file",
+		"/etc/mqtt2prometheus/config.yaml",
+		"Configuration file",
 	)
 	portFlag = flag.String(
 		"listen-port",
