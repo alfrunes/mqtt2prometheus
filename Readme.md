@@ -11,7 +11,6 @@ expose the received messages as prometheus metrics. Currently, the exporter supp
 
 I wrote this exporter to expose metrics from small embedded sensors based on the NodeMCU to prometheus.
 The used arduino sketch can be found in the [dht22tomqtt](https://github.com/hikhvar/dht22tomqtt) repository.
-A local hacking environment with mqtt2prometheus, a MQTT broker and a prometheus server is in the [hack](https://github.com/hikhvar/mqtt2prometheus/tree/master/hack) directory.
 
 ## Assumptions about Messages and Topics
 This exporter makes some assumptions about the MQTT topics. This exporter assumes that each
