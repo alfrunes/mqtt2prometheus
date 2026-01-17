@@ -1,7 +1,7 @@
 GOBINARY := go
 DOCKERBINARY := docker
 
-VERSION := $(shell git describe --tag --dirty 2>/dev/null)
+VERSION := $(shell git describe --tag --dirty)
 LDFLAGS := -s -w
 BUILDFLAGS := -trimpath
 GOARCH := $(shell $(GOBINARY) env GOARCH)

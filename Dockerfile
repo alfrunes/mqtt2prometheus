@@ -3,9 +3,12 @@ FROM --platform=${BUILDPLATFORM} golang:1.25.5 as builder
 ARG TARGETARCH
 ARG TARGETOS
 
-COPY . /build/mqtt2prometheus
 WORKDIR /build/mqtt2prometheus
-RUN make -B build TARGET_FILE=/bin/mqtt2prometheus "GOOS=${TARGETOS}" "GOARCH=${TARGETARCH}"
+RUN --mount=type=bind,source=.,target=/build/mqtt2prometheus \
+  make -B build \
+  TARGET_FILE=/bin/mqtt2prometheus \
+  "GOOS=${TARGETOS}" \
+  "GOARCH=${TARGETARCH}"
 
 FROM scratch
 COPY --from=builder /bin/mqtt2prometheus /usr/bin/mqtt2prometheus
