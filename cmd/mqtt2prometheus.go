@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"runtime/debug"
 	"time"
 
 	"go.uber.org/zap"
@@ -23,12 +24,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-// These variables are set by goreleaser at linking time.
-var (
-	version string
-	commit  string
-	date    string
-)
+// These variables are set at linking time.
+var version = "unknown"
 
 var (
 	configFlag = flag.String(
@@ -198,14 +195,26 @@ func getListenAddress() string {
 }
 
 func mustShowVersion() {
+
 	versionInfo := struct {
-		Version string
-		Commit  string
-		Date    string
+		Version   string
+		Commit    string
+		Date      string
+		GoVersion string
 	}{
 		Version: version,
-		Commit:  commit,
-		Date:    date,
+	}
+	buildInfo, ok := debug.ReadBuildInfo()
+	if ok {
+		versionInfo.GoVersion = buildInfo.GoVersion
+		for _, setting := range buildInfo.Settings {
+			switch setting.Key {
+			case "vcs.revision":
+				versionInfo.Commit = setting.Value
+			case "vcs.time":
+				versionInfo.Date = setting.Value
+			}
+		}
 	}
 
 	err := json.NewEncoder(os.Stdout).Encode(versionInfo)

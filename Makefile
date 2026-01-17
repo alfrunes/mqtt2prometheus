@@ -1,6 +1,7 @@
 GOBINARY := go
 DOCKERBINARY := docker
 
+VERSION := $(shell git describe --tag --dirty 2>/dev/null)
 LDFLAGS := -s -w
 BUILDFLAGS := -trimpath
 GOARCH := $(shell $(GOBINARY) env GOARCH)
@@ -26,7 +27,15 @@ test:
 	$(GOBINARY) vet ./...
 
 $(TARGET_FILE): $(SRC)
-	/usr/bin/env CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) $(GOBINARY) build $(BUILDFLAGS) -o $(TARGET_FILE) ./cmd
+	/usr/bin/env \
+		CGO_ENABLED=0 \
+		GOOS=$(GOOS) \
+		GOARCH=$(GOARCH) \
+		$(GOBINARY) build \
+		-ldflags '$(LDFLAGS)' \
+		-ldflags '-X main.version=$(VERSION)' \
+		$(BUILDFLAGS) \
+		-o $(TARGET_FILE) ./cmd
 
 build: $(TARGET_FILE)
 
