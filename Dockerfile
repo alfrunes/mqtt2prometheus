@@ -1,5 +1,5 @@
 ARG BUILDPLATFORM
-FROM --platform=${BUILDPLATFORM} golang:1.25.5 as builder
+FROM --platform=${BUILDPLATFORM} golang:1.25.6 as builder
 ARG TARGETARCH
 ARG TARGETOS
 
