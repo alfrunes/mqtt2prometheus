@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"regexp"
 	"sort"
@@ -149,7 +148,7 @@ type MetricConfig struct {
 	StringValueMapping *StringValueMappingConfig `yaml:"string_value_mapping"`
 	MQTTValueScale     float64                   `yaml:"mqtt_value_scale"`
 	// ErrorValue is used while error during value parsing
-	ErrorValue         *float64                  `yaml:"error_value"`
+	ErrorValue *float64 `yaml:"error_value"`
 }
 
 // StringValueMappingConfig defines the mapping from string to float
@@ -188,7 +187,7 @@ func (mc *MetricConfig) DynamicLabelsKeys() []string {
 }
 
 func LoadConfig(configFile string, logger *zap.Logger) (Config, error) {
-	configData, err := ioutil.ReadFile(configFile)
+	configData, err := os.ReadFile(configFile)
 	if err != nil {
 		return Config{}, err
 	}
@@ -252,13 +251,13 @@ func LoadConfig(configFile string, logger *zap.Logger) (Config, error) {
 
 		if m.StringValueMapping != nil && m.StringValueMapping.ErrorValue != nil {
 			if m.ErrorValue != nil {
-				return Config{}, fmt.Errorf("metric %s/%s: cannot set both string_value_mapping.error_value and error_value (string_value_mapping.error_value is deprecated).", m.MQTTName, m.PrometheusName)
+				return Config{}, fmt.Errorf("metric %s/%s: cannot set both string_value_mapping.error_value and error_value (string_value_mapping.error_value is deprecated)", m.MQTTName, m.PrometheusName)
 			}
 			logger.Warn("string_value_mapping.error_value is deprecated: please use error_value at the metric level.", zap.String("prometheusName", m.PrometheusName), zap.String("MQTTName", m.MQTTName))
 		}
 
-		if m.Expression != "" && m.RawExpression != ""  {
-			return Config{}, fmt.Errorf("metric %s/%s: expression and raw_expression are mutually exclusive.", m.MQTTName, m.PrometheusName)
+		if m.Expression != "" && m.RawExpression != "" {
+			return Config{}, fmt.Errorf("metric %s/%s: expression and raw_expression are mutually exclusive", m.MQTTName, m.PrometheusName)
 		}
 	}
 	if forcesMonotonicy {

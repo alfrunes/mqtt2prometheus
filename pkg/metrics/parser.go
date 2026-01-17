@@ -311,7 +311,7 @@ func (p *Parser) readMetricState(metricID string) (*metricState, error) {
 		}
 		return state, fmt.Errorf("failed to read file %q: %v", f.Name(), err)
 	}
-	defer f.Close()
+	defer f.Close() //nolint:errcheck
 
 	var data []byte
 	if info, err := f.Stat(); err == nil {
@@ -336,7 +336,7 @@ func (p *Parser) writeMetricState(metricID string, state *metricState) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer f.Close() //nolint:errcheck
 	if _, err = f.Write(out); err != nil {
 		return fmt.Errorf("failed to write file %q: %v", f.Name(), err)
 	}
