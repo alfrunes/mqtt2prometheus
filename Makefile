@@ -1,35 +1,22 @@
-ifndef GOBINARY
-  GOBINARY:="go"
-endif
+GOBINARY := go
+DOCKERBINARY := docker
 
-ifndef GOPATH
-  GOPATH:=$(shell $(GOBINARY) env GOPATH)
-endif
+LDFLAGS := -s -w
+BUILDFLAGS := -trimpath
+GOARCH := $(shell $(GOBINARY) env GOARCH)
+GOOS := $(shell $(GOBINARY) env GOOS)
+GOARM := $(shell $(GOBINARY) env GOARM)
 
-ifndef GOBIN
-  GOBIN:=$(GOPATH)/bin
-endif
+TARGET_FILE := bin/mqtt2prometheus_$(GOOS)_$(GOARCH)$(GOARM)
+SRC := $(shell go list -f '{{$$dir := .Dir}}{{range .GoFiles}}{{printf "%s/%s\n" $$dir .}}{{end}}' ./...)
 
-ifndef GOARCH
-  GOARCH:=$(shell $(GOBINARY) env GOARCH)
-endif
+# Container
+REGISTRY := docker.io
+REPOSITORY := alfrunes/mqtt2prometheus
+TAG := latest
 
-ifndef GOOS
-  GOOS:=$(shell $(GOBINARY) env GOOS)
-endif
-
-ifndef GOARM
-  GOARM:=$(shell $(GOBINARY) env GOARM)
-endif
-
-ifndef TARGET_FILE
-  TARGET_FILE:=bin/mqtt2prometheus.$(GOOS)_$(GOARCH)$(GOARM)
-endif
-
+.PHONY: all lint test build container
 all: build
-
-GO111MODULE=on
-
 
 lint:
 	golangci-lint run
@@ -38,14 +25,10 @@ test:
 	$(GOBINARY) test ./...
 	$(GOBINARY) vet ./...
 
-build:
-	GOOS=$(GOOS) GOARCH=$(GOARCH) $(GOBINARY) build -o $(TARGET_FILE) ./cmd
+$(TARGET_FILE): $(SRC)
+	/usr/bin/env CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) $(GOBINARY) build $(BUILDFLAGS) -o $(TARGET_FILE) ./cmd
 
-static_build:
-	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) $(GOBINARY) build -o $(TARGET_FILE) -a -tags netgo -ldflags '-w -extldflags "-static"' ./cmd
+build: $(TARGET_FILE)
 
 container:
-	docker build -t mqtt2prometheus:latest .
-
-test_release:
-	goreleaser --rm-dist --skip-validate --skip-publish
+	$(DOCKERBINARY) build -t $(REGISTRY)$(REPOSITORY):$(TAG) .
