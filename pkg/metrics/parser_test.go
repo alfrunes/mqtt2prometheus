@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hikhvar/mqtt2prometheus/pkg/config"
+	"github.com/alfrunes/mqtt2prometheus/pkg/config"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

@@ -1,4 +1,4 @@
-module github.com/hikhvar/mqtt2prometheus
+module github.com/alfrunes/mqtt2prometheus
 
 go 1.24.0
 

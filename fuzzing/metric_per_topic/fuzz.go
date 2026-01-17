@@ -4,8 +4,8 @@ package metric_per_topic
 
 import (
 	"fmt"
-	"github.com/hikhvar/mqtt2prometheus/pkg/config"
-	"github.com/hikhvar/mqtt2prometheus/pkg/metrics"
+	"github.com/alfrunes/mqtt2prometheus/pkg/config"
+	"github.com/alfrunes/mqtt2prometheus/pkg/metrics"
 )
 
 func Fuzz(data []byte) int {
