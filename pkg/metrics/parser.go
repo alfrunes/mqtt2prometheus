@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/alfrunes/mqtt2prometheus/pkg/config"
 	"github.com/expr-lang/expr"
 	"github.com/expr-lang/expr/vm"
-	"github.com/alfrunes/mqtt2prometheus/pkg/config"
 	"gopkg.in/yaml.v2"
 )
 
@@ -209,7 +209,7 @@ func (p *Parser) parseMetric(cfg *config.MetricConfig, metricID string, value in
 				if ok {
 					metricValue = floatValue
 
-				// deprecated, replaced by ErrorValue from the upper level
+					// deprecated, replaced by ErrorValue from the upper level
 				} else if cfg.StringValueMapping.ErrorValue != nil {
 					metricValue = *cfg.StringValueMapping.ErrorValue
 				} else if cfg.ErrorValue != nil {
@@ -433,14 +433,8 @@ func (p *Parser) evalExpressionLabel(metricID, label, code string, rawValue inte
 	if err != nil {
 		return "", err
 	}
-	if ms.program == nil {
+	if ms.env == nil {
 		ms.env = defaultExprEnv()
-		ms.program, err = expr.Compile(code, expr.Env(ms.env))
-		if err != nil {
-			return "", fmt.Errorf("failed to compile dynamic label expression %q: %w", code, err)
-		}
-		// Trigger flushing the new state to disk.
-		ms.lastWritten = time.Time{}
 	}
 
 	// Update the environment
@@ -453,6 +447,15 @@ func (p *Parser) evalExpressionLabel(metricID, label, code string, rawValue inte
 		ms.env[env_elapsed] = time.Duration(0)
 	} else {
 		ms.env[env_elapsed] = now().Sub(ms.dynamic.LastExprTimestamp)
+	}
+
+	if ms.program == nil {
+		ms.program, err = expr.Compile(code, expr.Env(ms.env))
+		if err != nil {
+			return "", fmt.Errorf("failed to compile dynamic label expression %q: %w", code, err)
+		}
+		// Trigger flushing the new state to disk.
+		ms.lastWritten = time.Time{}
 	}
 
 	result, err := expr.Run(ms.program, ms.env)

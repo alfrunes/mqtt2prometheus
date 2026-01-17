@@ -392,7 +392,7 @@ func TestParser_parseMetric(t *testing.T) {
 						{
 							PrometheusName: "enabled",
 							ValueType:      "gauge",
-							ErrorValue: floatP(12333),
+							ErrorValue:     floatP(12333),
 							StringValueMapping: &config.StringValueMappingConfig{
 								Map: map[string]float64{
 									"foo": 112,
@@ -449,7 +449,7 @@ func TestParser_parseMetric(t *testing.T) {
 						{
 							PrometheusName: "enabled",
 							ValueType:      "gauge",
-							ErrorValue: floatP(12333),
+							ErrorValue:     floatP(12333),
 							StringValueMapping: &config.StringValueMappingConfig{
 								Map: map[string]float64{
 									"foo": 112,
@@ -705,7 +705,7 @@ func TestParser_parseMetric(t *testing.T) {
 							ValueType:      "gauge",
 							OmitTimestamp:  true,
 							RawExpression:  `float(join(filter(split(string(raw_value), ""), { # matches "^[0-9\\.]$" }), ""))`,
-					},
+						},
 					},
 				},
 			},
